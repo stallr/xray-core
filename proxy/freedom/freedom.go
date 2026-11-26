@@ -162,6 +162,16 @@ func (r *FinalRule) Apply(network net.Network, address net.Address, port net.Por
 	return r.matchIP(address)
 }
 
+func tcpResponseReader(inbound *session.Inbound) func(io.Reader) buf.Reader {
+	if inbound != nil {
+		switch inbound.Name {
+		case "mieru", "naive", "sudoku", "shadowsocks-2022-multi":
+			return buf.NewAdaptiveReader
+		}
+	}
+	return buf.NewReader
+}
+
 func getDefaultFinalRule(inbound *session.Inbound) *FinalRule {
 	if inbound == nil {
 		return nil
@@ -459,11 +469,11 @@ func (h *Handler) Process(ctx context.Context, link *transport.Link, dialer inte
 				writeConn = inbound.Conn
 				inTimer = inbound.Timer
 			}
-			return proxy.CopyRawConnIfExist(ctx, conn, writeConn, link.Writer, timer, inTimer)
+			return proxy.CopyRawConnIfExist(ctx, conn, writeConn, link.Writer, timer, inTimer, tcpResponseReader(inbound))
 		}
 		var reader buf.Reader
 		if destination.Network == net.Network_TCP {
-			reader = buf.NewReader(conn)
+			reader = tcpResponseReader(inbound)(conn)
 		} else {
 			reader = NewPacketReader(conn, h, defaultRule, UDPOverride, destination)
 		}

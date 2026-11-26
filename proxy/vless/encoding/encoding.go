@@ -183,7 +183,7 @@ func XtlsRead(reader buf.Reader, writer buf.Writer, timer *signal.ActivityTimer,
 					writerConn = inbound.Conn
 					inTimer = inbound.Timer
 				}
-				return proxy.CopyRawConnIfExist(ctx, conn, writerConn, writer, timer, inTimer)
+				return proxy.CopyRawConnIfExist(ctx, conn, writerConn, writer, timer, inTimer, buf.NewReader)
 			}
 			buffer, err := reader.ReadMultiBuffer()
 			if !buffer.IsEmpty() {

@@ -148,6 +148,40 @@ func (r *BufferedReader) Close() error {
 	return common.Close(r.Reader)
 }
 
+// NewAdaptiveReader reads once per MultiBuffer, adapting between 8 KiB and 32 KiB.
+// It does not take ownership of reader or count bytes.
+func NewAdaptiveReader(reader io.Reader) Reader {
+	if mr, ok := reader.(Reader); ok {
+		return mr
+	}
+	return &adaptiveReader{reader: reader, size: Size}
+}
+
+type adaptiveReader struct {
+	reader io.Reader
+	size   int32
+}
+
+func (r *adaptiveReader) ReadMultiBuffer() (MultiBuffer, error) {
+	var b *Buffer
+	if r.size == Size {
+		b = New()
+	} else {
+		b = NewWithSize(r.size)
+	}
+	n, err := b.ReadFrom(r.reader)
+	if n == int64(r.size) {
+		r.size = 32768
+	} else if n > 0 {
+		r.size = Size
+	}
+	if n == 0 {
+		b.Release()
+		return nil, err
+	}
+	return MultiBuffer{b}, err
+}
+
 // SingleReader is a Reader that read one Buffer every time.
 type SingleReader struct {
 	io.Reader

@@ -733,10 +733,10 @@ func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 // CopyRawConnIfExist use the most efficient copy method.
 // - If caller don't want to turn on splice, do not pass in both reader conn and writer conn
 // - writer are from *transport.Link
-func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net.Conn, writer buf.Writer, timer *signal.ActivityTimer, inTimer *signal.ActivityTimer) error {
+func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net.Conn, writer buf.Writer, timer *signal.ActivityTimer, inTimer *signal.ActivityTimer, newReader func(io.Reader) buf.Reader) error {
 	readerConn, readCounter, _ := UnwrapRawConn(readerConn)
 	writerConn, _, writeCounter := UnwrapRawConn(writerConn)
-	reader := buf.NewReader(readerConn)
+	reader := newReader(readerConn)
 	if runtime.GOOS != "linux" && runtime.GOOS != "android" {
 		return readV(ctx, reader, writer, timer, readCounter)
 	}
