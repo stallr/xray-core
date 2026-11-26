@@ -116,18 +116,21 @@ func (w *StreamWriter) Write(p []byte) (int, error) {
 }
 
 func (w *StreamWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
-	defer buf.ReleaseMulti(mb)
-	for _, b := range mb {
-		p := b.Bytes()
-		for len(p) > 0 {
-			chunkSize := len(p)
-			if chunkSize > MaxPacketSize {
-				chunkSize = MaxPacketSize
-			}
-			if err := w.WriteChunk(p[:chunkSize]); err != nil {
-				return err
-			}
-			p = p[chunkSize:]
+	defer func() { buf.ReleaseMulti(mb) }()
+	// Only combine bytes already supplied by the producer. Short writes never wait
+	// for another batch, and the link continues to carry ordinary-sized buffers.
+	if len(mb) == 1 {
+		_, err := w.Write(mb[0].Bytes())
+		return err
+	}
+	scratch := buf.NewWithSize(32768)
+	defer scratch.Release()
+	raw := scratch.Extend(32768)
+	for !mb.IsEmpty() {
+		var n int
+		mb, n = buf.SplitBytes(mb, raw)
+		if err := w.WriteChunk(raw[:n]); err != nil {
+			return err
 		}
 	}
 	return nil
