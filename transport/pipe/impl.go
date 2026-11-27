@@ -106,6 +106,14 @@ func (p *pipe) ReadMultiBuffer() (buf.MultiBuffer, error) {
 }
 
 func (p *pipe) ReadMultiBufferTimeout(d time.Duration) (buf.MultiBuffer, error) {
+	if d <= 0 {
+		data, err := p.readMultiBufferInternal()
+		if data != nil || err != nil {
+			p.writeSignal.Signal()
+			return data, err
+		}
+		return nil, buf.ErrReadTimeout
+	}
 	timer := time.NewTimer(d)
 	defer timer.Stop()
 
