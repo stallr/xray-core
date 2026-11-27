@@ -148,7 +148,7 @@ func (r *BufferedReader) Close() error {
 	return common.Close(r.Reader)
 }
 
-// NewAdaptiveReader reads once per MultiBuffer, adapting between 8 KiB and 32 KiB.
+// NewAdaptiveReader reads once per MultiBuffer, starting at 8 KiB and keeping 32 KiB after a full read.
 // It does not take ownership of reader or count bytes.
 func NewAdaptiveReader(reader io.Reader) Reader {
 	if mr, ok := reader.(Reader); ok {
@@ -172,8 +172,6 @@ func (r *adaptiveReader) ReadMultiBuffer() (MultiBuffer, error) {
 	n, err := b.ReadFrom(r.reader)
 	if n == int64(r.size) {
 		r.size = 32768
-	} else if n > 0 {
-		r.size = Size
 	}
 	if n == 0 {
 		b.Release()

@@ -66,8 +66,8 @@ func TestAdaptiveGrow(t *testing.T) {
 	testAdaptiveSizes(t, []int{8192, 32768}, []int{8192, 32768})
 }
 
-func TestAdaptiveShrink(t *testing.T) {
-	testAdaptiveSizes(t, []int{8192, 32768, 32768, 8192}, []int{8192, 32768, 100, 8192})
+func TestAdaptiveSticky(t *testing.T) {
+	testAdaptiveSizes(t, []int{8192, 32768, 32768, 32768}, []int{8192, 32768, 100, 32768})
 }
 
 func TestAdaptiveOrderEOF(t *testing.T) {
