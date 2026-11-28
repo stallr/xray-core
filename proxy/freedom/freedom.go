@@ -165,7 +165,9 @@ func (r *FinalRule) Apply(network net.Network, address net.Address, port net.Por
 func tcpResponseReader(inbound *session.Inbound) func(io.Reader) buf.Reader {
 	if inbound != nil {
 		switch inbound.Name {
-		case "mieru", "naive", "sudoku", "shadowsocks-2022-multi":
+		case "mieru", "naive":
+			return buf.NewPooledReader
+		case "sudoku", "shadowsocks-2022-multi":
 			return buf.NewAdaptiveReader
 		}
 	}
